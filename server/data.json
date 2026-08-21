@@ -1,0 +1,13 @@
+{
+  "users": {},
+  "sessions": {},
+  "events": [],
+  "gallery": [],
+  "updates": [],
+  "settings": {
+    "appName": "EcoNexus",
+    "latestVersion": "1.0.0",
+    "announcement": "Welcome to EcoNexus",
+    "maintenance": false
+  }
+}
