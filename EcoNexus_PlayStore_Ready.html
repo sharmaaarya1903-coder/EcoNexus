@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0f5b43">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EcoNexus">
+<link rel="manifest" href="manifest.webmanifest">
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<title>Microfiber Awareness App | EcoNexus</title>
+<style>
+  :root{
+    --green:#176b4d;
+    --green2:#2f9d73;
+    --light:#eef8f3;
+    --cream:#f8fbf9;
+    --text:#17342a;
+    --muted:#667b73;
+    --white:#fff;
+    --danger:#b94b4b;
+    --shadow:0 10px 30px rgba(23,107,77,.12);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Inter,Segoe UI,Arial,sans-serif;
+    background:linear-gradient(135deg,#eaf7f0,#f8fbf9);
+    color:var(--text);
+  }
+  .app{
+    width:min(430px,100%);
+    min-height:100vh;
+    margin:auto;
+    background:var(--cream);
+    position:relative;
+    padding-bottom:82px;
+    box-shadow:0 0 35px rgba(0,0,0,.08);
+  }
+  header{
+    padding:24px 22px 18px;
+    background:linear-gradient(145deg,#145e45,#23865f);
+    color:white;
+    border-radius:0 0 28px 28px;
+  }
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{
+    width:46px;height:46px;border-radius:15px;
+    display:grid;place-items:center;
+    background:rgba(255,255,255,.16);
+    font-size:25px;
+  }
+  h1{font-size:22px;margin:0}
+  .subtitle{font-size:12px;opacity:.82;margin-top:3px}
+  main{padding:20px}
+  .screen{display:none}
+  .screen.active{display:block;animation:fade .22s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  .greeting{font-size:14px;color:var(--muted);margin-bottom:5px}
+  .title{font-size:28px;font-weight:800;margin:0 0 7px}
+  .intro{color:var(--muted);font-size:14px;line-height:1.5;margin:0 0 20px}
+  .hero{
+    padding:20px;border-radius:22px;background:var(--white);
+    box-shadow:var(--shadow);border:1px solid #e2eee8;
+    margin-bottom:16px;
+  }
+  .hero-icon{
+    width:58px;height:58px;border-radius:18px;background:var(--light);
+    display:grid;place-items:center;font-size:29px;margin-bottom:13px;
+  }
+  .hero h2{font-size:19px;margin:0 0 7px}
+  .hero p{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 16px}
+  button{
+    border:0;border-radius:14px;padding:13px 16px;font-weight:700;
+    cursor:pointer;font-size:14px;transition:.18s;
+  }
+  button:hover{transform:translateY(-1px)}
+  .primary{background:var(--green);color:white;width:100%}
+  .secondary{background:#e7f3ed;color:var(--green)}
+  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .card{
+    background:white;border:1px solid #e2eee8;border-radius:18px;padding:16px;
+    box-shadow:0 5px 18px rgba(23,107,77,.07);cursor:pointer;
+  }
+  .card .icon{font-size:23px}
+  .card h3{font-size:14px;margin:10px 0 4px}
+  .card p{font-size:11px;color:var(--muted);margin:0;line-height:1.4}
+  .section-title{font-size:20px;margin:0 0 6px}
+  .section-sub{font-size:13px;color:var(--muted);margin:0 0 17px}
+  .scanner{
+    background:#10251d;border-radius:22px;padding:15px;color:white;
+    box-shadow:var(--shadow);margin-bottom:15px;
+  }
+  .camera{
+    height:230px;border-radius:16px;border:2px solid rgba(255,255,255,.35);
+    display:grid;place-items:center;position:relative;overflow:hidden;
+    background:radial-gradient(circle,#264d3d,#0c1c16);
+  }
+  .scan-box{width:155px;height:155px;border:3px solid #7be0b3;border-radius:18px;position:relative}
+  .scan-line{position:absolute;left:8px;right:8px;height:2px;background:#7be0b3;top:20px;animation:scan 2s infinite}
+  @keyframes scan{0%{top:20px}50%{top:130px}100%{top:20px}}
+  .camera small{position:absolute;bottom:12px;opacity:.8}
+  .demo-row{display:flex;gap:9px;margin-top:12px}
+  .demo-row input{
+    flex:1;border:0;border-radius:12px;padding:12px;
+    outline:none;font-size:13px;
+  }
+  .demo-row button{background:#7be0b3;color:#103b2a}
+  .result{
+    background:white;border-radius:20px;padding:18px;border:1px solid #dfece6;
+    box-shadow:var(--shadow);display:none;
+  }
+  .result.show{display:block}
+  .tag{display:inline-block;padding:6px 9px;border-radius:999px;background:#e4f5ed;color:var(--green);font-size:11px;font-weight:800}
+  .result h3{margin:12px 0 6px}
+  .metric{
+    display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #edf2ef;
+    font-size:13px
+  }
+  .metric:last-child{border:0}
+  .metric span:last-child{font-weight:800}
+  .product{
+    display:flex;gap:12px;align-items:center;background:white;border:1px solid #e2eee8;
+    padding:14px;border-radius:18px;margin-bottom:12px;box-shadow:0 5px 18px rgba(23,107,77,.06)
+  }
+  .product-icon{width:52px;height:52px;border-radius:15px;background:#eaf7f0;display:grid;place-items:center;font-size:25px}
+  .product h3{font-size:14px;margin:0 0 4px}
+  .product p{font-size:11px;color:var(--muted);margin:0}
+  .score{margin-left:auto;text-align:right;font-weight:800;color:var(--green)}
+  .campaign{
+    background:white;border:1px solid #e2eee8;border-radius:20px;padding:17px;margin-bottom:12px;
+    box-shadow:var(--shadow)
+  }
+  .campaign .date{font-size:11px;color:var(--green);font-weight:800;text-transform:uppercase}
+  .campaign h3{font-size:16px;margin:7px 0}
+  .campaign p{font-size:12px;color:var(--muted);line-height:1.5;margin:0 0 12px}
+  .badge{display:inline-block;background:#fff3d9;color:#8a5c08;border-radius:999px;padding:6px 9px;font-size:10px;font-weight:800}
+  .nav{
+    position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+    width:min(430px,100%);background:white;border-top:1px solid #e1ebe6;
+    display:grid;grid-template-columns:repeat(4,1fr);padding:9px 10px calc(9px + env(safe-area-inset-bottom));
+    z-index:10;
+  }
+  .nav button{background:transparent;color:#71837b;padding:8px 4px;font-size:10px}
+  .nav button.active{color:var(--green);font-weight:900}
+  .nav-icon{display:block;font-size:20px;margin-bottom:3px}
+  .back{background:transparent;color:var(--green);padding:0;margin-bottom:16px}
+  .info-box{
+    background:#edf8f2;border-left:4px solid var(--green2);padding:13px;border-radius:12px;
+    font-size:12px;color:#315c4b;line-height:1.5;margin-top:13px
+  }
+  .empty{
+    text-align:center;padding:35px 20px;background:white;border-radius:20px;border:1px solid #e2eee8;
+  }
+  .empty div{font-size:40px;margin-bottom:10px}
+  .empty p{font-size:13px;color:var(--muted)}
+
+  /* LOGIN */
+  .login-screen{
+    min-height:100vh;display:grid;place-items:center;padding:22px;
+    background:linear-gradient(145deg,#dff3e8,#f8fbf9);
+  }
+  .login-card{
+    width:min(410px,100%);background:white;border:1px solid #dcebe4;
+    border-radius:28px;padding:30px 24px;box-shadow:0 20px 55px rgba(23,107,77,.16);
+    text-align:center;
+  }
+  .login-logo{
+    width:72px;height:72px;border-radius:24px;background:#e5f5ed;
+    display:grid;place-items:center;font-size:38px;margin:0 auto 14px;
+  }
+  .login-card h1{font-size:28px;color:#145e45;margin:0}
+  .login-subtitle{font-size:13px;color:#71837b;margin:5px 0 22px}
+  .login-tabs{display:grid;grid-template-columns:1fr 1fr;background:#edf6f1;padding:4px;border-radius:14px;margin-bottom:20px}
+  .login-tab{background:transparent;color:#71837b;padding:10px;border-radius:11px}
+  .login-tab.active{background:white;color:#176b4d;box-shadow:0 3px 10px rgba(0,0,0,.06)}
+  #authForm{text-align:left}
+  #authForm label{display:block;font-size:12px;font-weight:800;color:#315c4b;margin:12px 0 6px}
+  #authForm input{
+    width:100%;border:1px solid #d9e8e1;border-radius:13px;padding:13px;
+    outline:none;font-size:14px;background:#fbfdfc;
+  }
+  #authForm input:focus{border-color:#2f9d73;box-shadow:0 0 0 3px #e5f5ed}
+  .auth-button{width:100%;background:#176b4d;color:white;margin-top:18px}
+  .demo-login{width:100%;margin-top:10px;background:#e7f3ed;color:#176b4d}
+  .auth-message{font-size:12px;color:#b94b4b;min-height:17px;margin:10px 0 0}
+  .privacy-note{font-size:10px;color:#8a9892;margin:15px 0 0}
+  .login-feature-row{
+    display:grid;grid-template-columns:1fr;gap:5px;margin-top:14px;
+    font-size:10px;color:#667b73
+  }
+
+  /* CAMERA ACCESS */
+  .camera-permission{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:#edf8f2;border:1px solid #d7ece1;border-radius:16px;padding:13px;margin-bottom:13px;
+  }
+  .camera-permission p{margin:0;font-size:12px;color:#315c4b;line-height:1.4}
+  .camera-permission button{background:#176b4d;color:white;white-space:nowrap;padding:10px 12px}
+  .live-video{
+    display:none;width:100%;height:230px;object-fit:cover;border-radius:16px;
+    background:#08150f;
+  }
+  .live-video.show{display:block}
+  .camera.active .camera-placeholder{display:none}
+  .camera.active .live-video{display:block}
+  .logout-btn{float:right;background:rgba(255,255,255,.14);color:white;padding:8px 11px;font-size:11px}
+
+
+  .history-actions{display:flex;gap:9px;margin-bottom:14px}
+  .history-actions button{flex:1}
+  .danger{background:#fbe9e9;color:#a83f3f}
+  .scan-status{
+    margin-top:10px;padding:10px 12px;border-radius:12px;font-size:12px;
+    background:#172d24;color:#dff8ea;display:none
+  }
+  .scan-status.show{display:block}
+  .scan-status.error{background:#3b2424;color:#ffdede}
+  .real-scan-note{
+    font-size:11px;color:#74857e;line-height:1.45;margin:8px 2px 14px
+  }
+  .history-empty{display:none}
+  .history-time{font-size:10px;color:#8a9892;margin-top:4px}
+
+
+  .event-card{
+    background:white;border:1px solid #e2eee8;border-radius:20px;padding:17px;
+    margin-bottom:12px;box-shadow:var(--shadow)
+  }
+  .event-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+  .event-date{font-size:11px;color:var(--green);font-weight:900;text-transform:uppercase}
+  .event-type{display:inline-block;background:#e7f3ed;color:var(--green);border-radius:999px;padding:5px 8px;font-size:9px;font-weight:900}
+  .event-card h3{font-size:17px;margin:8px 0 6px}
+  .event-card p{font-size:12px;color:var(--muted);line-height:1.5;margin:0 0 11px}
+  .event-meta{display:grid;gap:6px;font-size:11px;color:#536c61}
+  .event-meta strong{color:#254a3b}
+
+
+  .feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:14px}
+  .feature-card{background:#fff;border:1px solid #e2eee8;border-radius:18px;padding:16px;box-shadow:var(--shadow);cursor:pointer}
+  .feature-card .big-icon{font-size:28px}.feature-card h3{font-size:14px;margin:7px 0 4px}.feature-card p{font-size:11px;color:var(--muted);margin:0;line-height:1.4}
+  .dosdont{display:grid;grid-template-columns:1fr 1fr;gap:12px}.dd-card{border-radius:18px;padding:16px}.dd-card.do{background:#eaf7ef;border:1px solid #cce9d8}.dd-card.dont{background:#fff0ee;border:1px solid #f0d0cb}.dd-card h3{margin:0 0 10px}.dd-card li{font-size:12px;margin:9px 0;line-height:1.4}
+  .game-box,.quiz-box,.gallery-box,.store-box{background:#fff;border:1px solid #e2eee8;border-radius:20px;padding:17px;box-shadow:var(--shadow);margin-top:14px}
+  #gameCanvas{width:100%;height:360px;background:#edf8f2;border-radius:16px;display:block;touch-action:none}
+  .game-stats{display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:#315c4b;margin:10px 2px}
+  .game-controls{display:flex;gap:9px}.game-controls button{flex:1}
+  .quiz-q{font-size:15px;font-weight:800;line-height:1.4;margin-bottom:12px}.quiz-option{width:100%;text-align:left;background:#f7faf8;color:#294c3d;border:1px solid #dceae3;margin:6px 0;padding:11px;border-radius:12px}.quiz-option.correct{background:#e5f5eb;border-color:#8dceaa}.quiz-option.wrong{background:#fff0ee;border-color:#e2a79f}.quiz-progress{font-size:11px;color:#71837b;margin-bottom:10px}.quiz-result{text-align:center;padding:12px;background:#edf8f2;border-radius:14px}.quiz-score{font-size:30px;font-weight:900;color:#176b4d}.gallery-upload{display:flex;gap:9px;align-items:center}.gallery-upload input{width:100%;font-size:12px}.gallery-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.gallery-item{border:1px solid #e2eee8;border-radius:16px;overflow:hidden;background:#fff}.gallery-item img{width:100%;height:130px;object-fit:cover;display:block}.gallery-caption{padding:9px;font-size:11px;color:#536c61}.small-note{font-size:10px;color:#8a9892;line-height:1.45}
+  @media(max-width:520px){.feature-grid,.dosdont,.gallery-grid{grid-template-columns:1fr 1fr}.dd-card{padding:12px}.dd-card li{font-size:11px}.feature-card{padding:13px}}
+
+
+
+  /* ---------- ECO NEXUS PREMIUM MOBILE UI ---------- */
+  body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+  button,input{font-family:inherit}
+  .app{min-height:100dvh;overflow-x:hidden}
+  .app-shell.ready{opacity:1;transform:none}
+  .glass-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px}
+  .status-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.12);font-size:10px;font-weight:800;color:#eafff5;border:1px solid rgba(255,255,255,.16)}
+  .status-dot{width:7px;height:7px;border-radius:50%;background:#81e8b8;box-shadow:0 0 0 5px rgba(129,232,184,.09)}
+  .home-hero{position:relative;overflow:hidden;background:linear-gradient(145deg,#0f5b43,#248a64);border-radius:26px;padding:22px;color:white;box-shadow:0 18px 45px rgba(23,107,77,.20);margin-bottom:17px}
+  .home-hero:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;right:-55px;top:-70px;background:rgba(255,255,255,.08)}
+  .home-hero:before{content:"";position:absolute;width:120px;height:120px;border-radius:50%;right:48px;bottom:-70px;background:rgba(255,255,255,.05)}
+  .home-hero .eyebrow{font-size:10px;letter-spacing:1.4px;font-weight:900;opacity:.82;text-transform:uppercase}
+  .home-hero h2{font-size:30px;line-height:1.03;margin:9px 0 9px;max-width:280px;position:relative;z-index:1}
+  .home-hero p{font-size:12px;line-height:1.55;max-width:310px;color:rgba(255,255,255,.82);margin:0 0 18px;position:relative;z-index:1}
+  .hero-actions{display:flex;gap:9px;position:relative;z-index:1}
+  .hero-actions .hero-primary{background:#fff;color:#12583f;flex:1}
+  .hero-actions .hero-secondary{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.18)}
+  .metric-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+  .metric-pill{background:#fff;border:1px solid #e3eee8;border-radius:16px;padding:12px 9px;box-shadow:0 7px 20px rgba(23,107,77,.06)}
+  .metric-pill b{display:block;font-size:17px;color:var(--green)}
+  .metric-pill span{font-size:9px;color:var(--muted);line-height:1.3}
+  .quick-title{font-size:12px;font-weight:900;letter-spacing:.7px;text-transform:uppercase;color:#557268;margin:2px 0 10px}
+  .feature-card,.card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+  .feature-card:active,.card:active{transform:scale(.985)}
+  .feature-card:hover,.card:hover{box-shadow:0 12px 28px rgba(23,107,77,.11);border-color:#cfe5da}
+  .nav{height:76px;border-top:1px solid #dfeae5;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:7px 8px calc(7px + env(safe-area-inset-bottom));box-shadow:0 -8px 25px rgba(0,0,0,.04)}
+  .nav button{border-radius:14px;position:relative}
+  .nav button.active{background:#e9f7f0}
+  .nav button.active:before{content:"";position:absolute;top:3px;left:50%;transform:translateX(-50%);width:20px;height:3px;background:var(--green);border-radius:999px}
+  .login-screen{padding:max(22px,env(safe-area-inset-top)) 20px max(22px,env(safe-area-inset-bottom));}
+  .login-card{box-shadow:0 24px 70px rgba(14,86,61,.17);overflow:hidden}
+  .login-card:before{content:"";display:block;height:5px;background:linear-gradient(90deg,#176b4d,#65c999,#176b4d);margin:-30px -24px 24px}
+  .login-logo{box-shadow:0 10px 28px rgba(23,107,77,.10)}
+  .form-hint{font-size:10px;color:#8a9892;margin:8px 0 0;text-align:center}
+  .toast{position:fixed;left:50%;bottom:94px;transform:translate(-50%,20px);opacity:0;z-index:10020;background:#17342a;color:#fff;padding:11px 14px;border-radius:13px;font-size:11px;font-weight:700;box-shadow:0 12px 30px rgba(0,0,0,.18);transition:.25s;max-width:90%;text-align:center}
+  .toast.show{transform:translate(-50%,0);opacity:1}
+  .install-banner{display:none;position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:10010;width:min(410px,calc(100% - 24px));padding:13px 14px;border:1px solid #d7e9df;border-radius:18px;background:rgba(255,255,255,.96);box-shadow:0 18px 50px rgba(0,0,0,.14);backdrop-filter:blur(14px)}
+  .install-banner.show{display:flex;align-items:center;gap:10px}
+  .install-banner .install-icon{width:40px;height:40px;border-radius:13px;background:#eaf7f0;display:grid;place-items:center;font-size:21px;flex:none}
+  .install-banner .install-copy{flex:1}.install-copy b{display:block;font-size:12px}.install-copy span{font-size:10px;color:var(--muted)}
+  .install-banner button{padding:10px 11px}.install-close{background:#f2f6f4;color:#527166}
+  .section-title{letter-spacing:-.2px}
+  .hero,.feature-card,.card,.product,.campaign,.event-card,.game-box,.quiz-box,.gallery-box,.store-box{box-shadow:0 8px 28px rgba(23,107,77,.07)}
+  .camera{box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+  @media(max-width:380px){.home-hero h2{font-size:27px}.metric-pill{padding:10px 7px}.metric-pill b{font-size:15px}}
+
+  /* APP SPLASH SCREEN */
+  .splash-screen{
+    position:fixed;inset:0;z-index:9999;display:grid;place-items:center;
+    background:radial-gradient(circle at 50% 42%,#2f9d73 0%,#176b4d 38%,#0d3d2d 100%);
+    color:white;transition:opacity .65s ease,visibility .65s ease;
+  }
+  .splash-screen.hide{opacity:0;visibility:hidden;pointer-events:none}
+  .splash-content{text-align:center;animation:splashIn .9s ease both}
+  .splash-logo{
+    width:108px;height:108px;border-radius:32px;margin:0 auto 20px;
+    display:grid;place-items:center;font-size:58px;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
+    box-shadow:0 18px 50px rgba(0,0,0,.2);backdrop-filter:blur(10px);
+  }
+  .splash-content h1{font-size:34px;margin:0;font-weight:900;letter-spacing:.3px}
+  .splash-content p{margin:7px 0 0;font-size:13px;opacity:.82;letter-spacing:1.5px}
+  .splash-loader{width:120px;height:3px;background:rgba(255,255,255,.22);border-radius:99px;margin:25px auto 0;overflow:hidden}
+  .splash-loader span{display:block;width:45%;height:100%;background:white;border-radius:99px;animation:loading 1.2s ease-in-out infinite}
+  @keyframes splashIn{from{opacity:0;transform:scale(.88) translateY(12px)}to{opacity:1;transform:none}}
+  @keyframes loading{0%{transform:translateX(-120%)}100%{transform:translateX(280%)}}
+  .app-shell{opacity:0;transform:scale(.985);transition:opacity .55s ease,transform .55s ease}
+  .app-shell.ready{opacity:1;transform:none}
+  @media(max-width:520px){.splash-logo{width:96px;height:96px;font-size:50px}.splash-content h1{font-size:30px}}
+
+</style>
+</head>
+<body>
+<!-- APP SPLASH / BRAND INTRO -->
+<div id="splashScreen" class="splash-screen">
+  <div class="splash-content">
+    <div class="splash-logo">🌿</div>
+    <h1>EcoNexus</h1>
+    <p>MICROFIBER AWARENESS</p>
+    <div class="splash-loader"><span></span></div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+<div id="installBanner" class="install-banner">
+  <div class="install-icon">🌿</div>
+  <div class="install-copy"><b>Install EcoNexus</b><span>Add the app to your home screen for a faster experience.</span></div>
+  <button class="secondary" id="installBtn">Install</button>
+  <button class="install-close" onclick="dismissInstall()">×</button>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🌿</div>
+    <h1>EcoNexus</h1>
+    <p class="login-subtitle">Microfiber Awareness App</p>
+
+    <div class="login-tabs">
+      <button id="loginTab" class="login-tab active" onclick="switchAuth('login')">Login</button>
+      <button id="signupTab" class="login-tab" onclick="switchAuth('signup')">Create Account</button>
+    </div>
+
+    <form id="authForm" onsubmit="handleAuth(event)">
+      <label>Email</label>
+      <input id="authEmail" type="email" placeholder="you@example.com" required>
+
+      <label>Password</label>
+      <input id="authPassword" type="password" placeholder="Enter password" minlength="6" required>
+
+      <button class="auth-button" type="submit">Continue</button>
+    </form>
+
+    <button class="demo-login" onclick="demoLogin()">Try Demo Account</button>
+    <p id="authMessage" class="auth-message"></p>
+    <div class="login-feature-row">
+      <span>🔐 Secure sign-in</span>
+      <span>📷 Camera ready</span>
+      <span>🕘 History saved</span>
+    </div>
+    <p class="privacy-note">Your account can sync with the EcoNexus main server when connected.</p>
+  </div>
+</div>
+
+<div class="app app-shell" id="mainApp" style="display:none">
+  <header>
+    <button class="logout-btn" onclick="logout()">Log out</button>
+    <div class="brand">
+      <div class="logo">🌿</div>
+      <div>
+        <h1>Microfiber Awareness</h1>
+        <div class="subtitle">EcoNexus • Think It Up</div>
+        <div id="userLabel" class="subtitle"></div>
+        <div class="glass-top"><div class="status-pill"><span class="status-dot"></span>EcoNexus online</div></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- HOME -->
+    <section id="home" class="screen active">
+      <div class="greeting">Welcome to EcoNexus</div>
+      <div class="home-hero">
+        <div class="eyebrow">Think It Up • Live Smarter</div>
+        <h2>Know what your clothes release.</h2>
+        <p>Scan clothing, learn about microfiber shedding, join awareness campaigns, and make better-informed choices.</p>
+        <div class="hero-actions">
+          <button class="hero-primary" onclick="showScreen('scanner')">📷 Scan Clothing</button>
+          <button class="hero-secondary" onclick="showScreen('about')">Learn</button>
+        </div>
+      </div>
+
+      <div class="metric-strip">
+        <div class="metric-pill"><b>QR</b><span>Product information</span></div>
+        <div class="metric-pill"><b>50</b><span>Local scans saved</span></div>
+        <div class="metric-pill"><b>24/7</b><span>Awareness tools</span></div>
+      </div>
+
+      <div class="quick-title">Explore EcoNexus</div>
+
+      <div class="feature-grid">
+        <div class="feature-card" onclick="showScreen('dosdont')"><div class="big-icon">✅</div><h3>Do's & Don'ts</h3><p>Simple clothing-care choices.</p></div>
+        <div class="feature-card" onclick="showScreen('game')"><div class="big-icon">🎮</div><h3>Mini Game</h3><p>Catch the microfibers.</p></div>
+        <div class="feature-card" onclick="showScreen('quiz')"><div class="big-icon">🧠</div><h3>Quiz</h3><p>Test your knowledge.</p></div>
+        <div class="feature-card" onclick="showScreen('gallery')"><div class="big-icon">🖼️</div><h3>Gallery</h3><p>EcoNexus project photos.</p></div>
+      </div>
+
+      <div class="cards">
+        <div class="card" onclick="showScreen('scanner')">
+          <div class="icon">🔍</div>
+          <h3>Scanning Option</h3>
+          <p>Check a clothing product.</p>
+        </div>
+        <div class="card" onclick="showScreen('history')">
+          <div class="icon">🕘</div>
+          <h3>Earlier Scanned</h3>
+          <p>Review your products.</p>
+        </div>
+        <div class="card" onclick="showScreen('campaigns')">
+          <div class="icon">📢</div>
+          <h3>New Campaigns</h3>
+          <p>See EcoNexus events.</p>
+        </div>
+        <div class="card" onclick="showAbout()">
+          <div class="icon">💧</div>
+          <h3>Why It Matters</h3>
+          <p>Learn about microfiber pollution.</p>
+        </div>
+        <div class="card" onclick="showScreen('updates')">
+          <div class="icon">🔔</div>
+          <h3>EcoNexus Updates</h3>
+          <p>News and new features from the main server.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCANNER -->
+    <section id="scanner" class="screen">
+      <button class="back" onclick="showScreen('home')">← Back</button>
+      <h2 class="section-title">Scanner</h2>
+      <p class="section-sub">Point your camera at a clothing QR code.</p>
+
+      <div class="camera-permission">
+        <p><strong>Real QR scanner</strong><br>Allow camera access, then point it at any QR code.</p>
+        <button id="cameraButton" onclick="startCamera()">Enable Camera</button>
+      </div>
+
+      <p class="real-scan-note">
+        On the Android app, the phone camera scanner is used for reliable QR scanning.
+        In a browser, camera scanning remains available when supported. EcoNexus QR codes can contain
+        a code such as <b>ECO-001</b> or a JSON product record.
+      </p>
+      <button class="primary" onclick="startNativeScanner()" style="width:100%;margin-bottom:12px">📷 Scan QR with Phone Camera</button>
+
+      <div class="scanner">
+        <div class="camera" id="cameraBox">
+          <div class="camera-placeholder">
+            <div class="scan-box"><div class="scan-line"></div></div>
+            <small>Waiting for camera…</small>
+          </div>
+          <video id="liveVideo" class="live-video" autoplay playsinline muted></video>
+          <canvas id="scanCanvas" style="display:none"></canvas>
+        </div>
+        <div id="scanStatus" class="scan-status"></div>
+        <div class="demo-row">
+          <input id="qrInput" placeholder="Optional test code: ECO-001">
+          <button onclick="scanDemo()">Test</button>
+        </div>
+      </div>
+
+      <div id="scanResult" class="result">
+        <span class="tag">SCAN COMPLETE</span>
+        <h3 id="productName">Polyester Sports T-Shirt</h3>
+        <div class="metric"><span>Fabric</span><span id="fabric">100% Polyester</span></div>
+        <div class="metric"><span>Estimated microfiber shedding</span><span id="shed">High</span></div>
+        <div class="metric"><span>Microfiber level</span><span id="level">72 / 100</span></div>
+        <div class="metric"><span>Environmental impact</span><span id="impact">Moderate–High</span></div>
+        <div class="metric"><span>Recommended choice</span><span id="choice">Look for lower-shedding options</span></div>
+        <div class="info-box">This is an educational estimate for the sample app. Real product data would come from verified testing or manufacturer information.</div>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section id="history" class="screen">
+      <button class="back" onclick="showScreen('home')">← Back</button>
+      <h2 class="section-title">Earlier Scanned</h2>
+      <p class="section-sub">Your real scan history, saved in this browser.</p>
+
+      <div class="history-actions">
+        <button class="secondary" onclick="showScreen('scanner')">＋ Scan New</button>
+        <button class="danger" onclick="clearHistory()">Clear History</button>
+      </div>
+
+      <div id="historyList"></div>
+      <div id="historyEmpty" class="empty history-empty">
+        <div>🕘</div>
+        <h3>No scans yet</h3>
+        <p>Scan a real QR code and it will appear here automatically.</p>
+      </div>
+
+      <div class="info-box">History is stored locally on this device using your browser's local storage. It remains after refreshing or reopening the app on the same browser.</div>
+    </section>
+
+    <!-- CAMPAIGNS -->
+    <section id="campaigns" class="screen">
+      <button class="back" onclick="showScreen('home')">← Back</button>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div>
+          <h2 class="section-title">New Campaigns</h2>
+          <p class="section-sub">Upcoming events received from the EcoNexus main data center.</p>
+        </div>
+        <button class="secondary" onclick="loadEvents()" style="padding:10px 11px;font-size:11px">↻ Refresh</button>
+      </div>
+
+      <div id="eventStatus" class="info-box" style="margin-top:0;margin-bottom:14px">
+        Connecting to the EcoNexus data center…
+      </div>
+
+      <div id="eventList"></div>
+
+      <div id="eventEmpty" class="empty" style="display:none">
+        <div>📅</div>
+        <h3>No upcoming events</h3>
+        <p>New EcoNexus campaigns will appear here when they are published.</p>
+      </div>
+    </section>
+
+    <!-- DO'S & DON'TS -->
+    <section id="dosdont" class="screen">
+      <button class="back" onclick="showScreen('home')">← Back</button>
+      <h2 class="section-title">Do's & Don'ts</h2><p class="section-sub">Practical choices to reduce microfiber release.</p>
+      <div class="dosdont">
+        <div class="dd-card do"><h3>✅ Do</h3><ul><li>Prefer durable, lower-shedding fabrics when practical.</li><li>Wash clothes only when needed.</li><li>Use a microfiber-catching laundry filter or bag where appropriate.</li><li>Follow the garment care label.</li><li>Choose quality garments designed to last.</li></ul></div>
+        <div class="dd-card dont"><h3>❌ Don't</h3><ul><li>Wash every garment after a single light use.</li><li>Overload the washing machine.</li><li>Ignore care instructions.</li><li>Treat an estimate as laboratory-tested product data.</li><li>Throw away usable clothing just because it contains synthetic fibres.</li></ul></div>
+      </div>
+      <div class="info-box">EcoNexus focuses on informed choices, not blaming people for using synthetic clothing.</div>
+    </section>
+
+    <!-- GAME -->
+    <section id="game" class="screen">
+      <button class="back" onclick="showScreen('home')">← Back</button>
+      <h2 class="section-title">Microfiber Catch</h2><p class="section-sub">A small awareness game: catch the useful items and avoid the plastic fibres.</p>
+      <div class="game-box">
+        <div class="game-stats"><span>Score: <b id="gameScore">0</b></span><span>Time: <b id="gameTime">30</b>s</span><span>Best: <b id="gameBest">0</b></span></div>
+        <canvas id="gameCanvas" width="700" height="360"></canvas>
+        <div class="game-controls"><button class="primary" onclick="startGame()">Start / Restart</button><button class="secondary" onclick="showGameTip()">How to Play</button></div>
+        <p id="gameTip" class="small-note">Catch the green laundry filter icons. Avoid the floating microfiber fibres. The game is for awareness and learning.</p>
+      </div>
+    </section>
+
+    <!-- QUIZ -->
+    <section id="quiz" class="screen">
+      <button class="back" onclick="showScreen('home')">← Back</button>
+      <h2 class="section-title">EcoNexus Quiz</h2><p class="section-sub">Answer the questions and see your score.</p>
+      <div class="quiz-box"><div id="quizArea"></div></div>
+    </section>
+
+    <!-- GALLERY -->
+    <section id="gallery" class="screen">
+      <button class="back" onclick="showScreen('home')">← Back</button>
+      <h2 class="section-title">EcoNexus Gallery</h2><p class="section-sub">Project photos, campaign moments and awareness material.</p>
+      <div class="gallery-box">
+        <p class="small-note">Photos are published centrally by the EcoNexus main server.</p>
+        <div id="galleryGrid" class="gallery-grid"></div>
+      </div>
+    </section>
+
+    <!-- UPDATES -->
+    <section id="updates" class="screen">
+      <button class="back" onclick="showScreen('home')">← Back</button>
+      <h2 class="section-title">EcoNexus Updates</h2>
+      <p class="section-sub">Live announcements and future improvements from the main server.</p>
+      <div id="updateStatus" class="info-box">Loading updates…</div>
+      <div id="updateList"></div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about" class="screen">
+      <button class="back" onclick="showScreen('home')">← Back</button>
+      <h2 class="section-title">Why It Matters</h2>
+      <p class="section-sub">A simple introduction to microfiber pollution.</p>
+      <div class="hero">
+        <div class="hero-icon">🌊</div>
+        <h2>From clothes to water</h2>
+        <p>Synthetic textiles can release tiny plastic fibres during washing. These fibres can enter wastewater and contribute to plastic pollution.</p>
+        <div class="info-box">The goal of EcoNexus is not to label every synthetic garment as “bad”, but to give people clearer information so they can make more informed choices.</div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="nav">
+    <button id="nav-home" class="active" onclick="showScreen('home')"><span class="nav-icon">⌂</span>Home</button>
+    <button id="nav-scanner" onclick="showScreen('scanner')"><span class="nav-icon">⌕</span>Scan</button>
+    <button id="nav-history" onclick="showScreen('history')"><span class="nav-icon">◷</span>History</button>
+    <button id="nav-campaigns" onclick="showScreen('campaigns')"><span class="nav-icon">✦</span>Campaigns</button>
+    <button id="nav-more" onclick="showScreen('dosdont')"><span class="nav-icon">☰</span>More</button>
+  </nav>
+</div>
+
+<script src="config.js"></script>
+<script>
+const screens = ["home","scanner","history","campaigns","dosdont","game","quiz","gallery","updates","about"];
+
+function showScreen(name){
+  if(name === "campaigns") setTimeout(loadEvents, 0);
+  if(name === "quiz") setTimeout(initQuiz, 0);
+  if(name === "gallery") setTimeout(renderGallery, 0);
+  if(name === "updates") setTimeout(loadUpdates, 0);
+  if(name === "game") setTimeout(resizeGameCanvas, 0);
+  screens.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.classList.toggle("active", id === name);
+  });
+
+  document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+  const nav = document.getElementById("nav-" + name);
+  if(nav) nav.classList.add("active");
+  else if(["dosdont","game","quiz","gallery","updates","about"].includes(name)){
+    const more = document.getElementById("nav-more");
+    if(more) more.classList.add("active");
+  }
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function showAbout(){ showScreen("about"); }
+
+let authMode = "login";
+let cameraStream = null;
+
+function switchAuth(mode){
+  authMode = mode;
+  document.getElementById("loginTab").classList.toggle("active", mode === "login");
+  document.getElementById("signupTab").classList.toggle("active", mode === "signup");
+  document.querySelector(".auth-button").textContent = mode === "login" ? "Login" : "Create Account";
+  document.getElementById("authMessage").textContent = "";
+}
+
+async function handleAuth(event){
+  event.preventDefault();
+
+  const email = document.getElementById("authEmail").value.trim().toLowerCase();
+  const password = document.getElementById("authPassword").value;
+  const message = document.getElementById("authMessage");
+
+  if(password.length < 6){
+    message.textContent = "Password must contain at least 6 characters.";
+    return;
+  }
+
+  try{
+    const endpoint=authMode==='signup'?'/api/auth/register':'/api/auth/login';
+    const r=await apiFetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    if(r.ok){const data=await r.json();localStorage.setItem('ecoNexusToken',data.token||'');localStorage.setItem('ecoNexusUser',email);openApp();return;}
+  }catch(e){}
+
+  const accounts = JSON.parse(localStorage.getItem("ecoNexusAccounts") || "{}");
+
+  if(authMode === "signup"){
+    if(accounts[email]){
+      message.textContent = "An account with this email already exists.";
+      return;
+    }
+    accounts[email] = {password:password};
+    localStorage.setItem("ecoNexusAccounts", JSON.stringify(accounts));
+  }else{
+    if(accounts[email] && accounts[email].password !== password){
+      message.textContent = "Incorrect password.";
+      return;
+    }
+
+    // For the prototype, allow a first-time login to create a local account.
+    if(!accounts[email]){
+      accounts[email] = {password:password};
+      localStorage.setItem("ecoNexusAccounts", JSON.stringify(accounts));
+    }
+  }
+
+  localStorage.setItem("ecoNexusUser", email);
+  openApp();
+}
+
+async function demoLogin(){
+  const email = "demo@econexus.app";
+  try{const r=await apiFetch('/api/auth/demo',{method:'POST'});if(r.ok){const d=await r.json();localStorage.setItem('ecoNexusToken',d.token||'');localStorage.setItem('ecoNexusUser',email);openApp();return;}}catch(e){}
+  const accounts = JSON.parse(localStorage.getItem("ecoNexusAccounts") || "{}");
+  accounts[email] = {password:"demo123"};
+  localStorage.setItem("ecoNexusAccounts", JSON.stringify(accounts));
+  localStorage.setItem("ecoNexusUser", email);
+  openApp();
+}
+
+let heartbeatTimer = null;
+function startUserHeartbeat(){
+  clearInterval(heartbeatTimer);
+  const beat = async () => {
+    const token = localStorage.getItem("ecoNexusToken");
+    if(!token) return;
+    try{ await apiFetch("/api/auth/heartbeat", {method:"POST"}); }catch(e){}
+  };
+  beat();
+  heartbeatTimer = setInterval(beat, 30000);
+}
+
+function openApp(){
+  const login = document.getElementById("loginScreen");
+  const main = document.getElementById("mainApp");
+  login.style.display = "none";
+  main.style.display = "block";
+  requestAnimationFrame(() => { main.style.opacity = "1"; });
+
+  const user = localStorage.getItem("ecoNexusUser") || "";
+  const label = document.getElementById("userLabel");
+  if(label) label.textContent = user ? "Signed in as " + user : "";
+
+  renderHistory();
+  startUserHeartbeat();
+}
+
+function logout(){
+  stopCamera();
+  clearInterval(heartbeatTimer);
+  heartbeatTimer = null;
+  localStorage.removeItem("ecoNexusUser");
+  const main = document.getElementById("mainApp");
+  const login = document.getElementById("loginScreen");
+  main.style.opacity = "0";
+  main.style.display = "none";
+  login.style.display = "grid";
+  requestAnimationFrame(() => { login.style.opacity = "1"; });
+
+  const email = document.getElementById("authEmail");
+  if(email) email.value = "";
+  const password = document.getElementById("authPassword");
+  if(password) password.value = "";
+  document.getElementById("authMessage").textContent = "";
+}
+
+async function startCamera(){
+  const message = document.querySelector(".camera-permission p");
+  const button = document.getElementById("cameraButton");
+
+  if(cameraStream){
+    stopCamera(true);
+    return;
+  }
+
+  if(!window.isSecureContext && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+    setScanStatus("Camera access needs HTTPS or the packaged EcoNexus Android app.", true);
+    return;
+  }
+
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    setScanStatus("This device/browser does not provide camera access. Try the EcoNexus Android app or a current Chrome/Edge browser.", true);
+    return;
+  }
+
+  try{
+    stopCamera(false);
+    setScanStatus("Requesting camera permission…", false);
+
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:"environment"}, width:{ideal:1280}, height:{ideal:720}},
+      audio:false
+    });
+
+    const video = document.getElementById("liveVideo");
+    video.srcObject = cameraStream;
+    await video.play();
+
+    document.getElementById("cameraBox").classList.add("active");
+    message.innerHTML = "<strong>Camera enabled ✓</strong><br>Point the rear camera at a QR code.";
+    button.textContent = "Stop Camera";
+    button.onclick = () => stopCamera(true);
+
+    setScanStatus("Camera is live — looking for a QR code…", false);
+    startQrLoop();
+  }catch(error){
+    cameraStream = null;
+    const reason = error && error.name === "NotAllowedError" ? "Camera permission was denied." :
+      error && error.name === "NotFoundError" ? "No camera was found on this device." :
+      "The camera could not be started.";
+    setScanStatus(reason + " Please allow camera access and try again.", true);
+  }
+}
+
+function stopCamera(resetMessage=true){
+  if(cameraStream){
+    cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+  }
+
+  if(qrAnimationFrame){
+    cancelAnimationFrame(qrAnimationFrame);
+    qrAnimationFrame = null;
+  }
+
+  const video = document.getElementById("liveVideo");
+  if(video) video.srcObject = null;
+
+  const box = document.getElementById("cameraBox");
+  if(box) box.classList.remove("active");
+
+  const button = document.getElementById("cameraButton");
+  if(button){
+    button.textContent = "Enable Camera";
+    button.onclick = startCamera;
+  }
+
+  if(resetMessage){
+    const message = document.querySelector(".camera-permission p");
+    if(message) message.innerHTML = "<strong>Real QR scanner</strong><br>Allow camera access, then point it at any QR code.";
+    setScanStatus("Camera stopped.", false);
+  }
+}
+
+function setScanStatus(text, error=false){
+  const el = document.getElementById("scanStatus");
+  if(!el) return;
+  el.textContent = text;
+  el.classList.add("show");
+  el.classList.toggle("error", error);
+}
+
+function startQrLoop(){
+  const video = document.getElementById("liveVideo");
+  const canvas = document.getElementById("scanCanvas");
+  const ctx = canvas.getContext("2d", {willReadFrequently:true});
+
+  const loop = () => {
+    if(!cameraStream || video.readyState < 2){
+      qrAnimationFrame = requestAnimationFrame(loop);
+      return;
+    }
+
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+    if(!width || !height){
+      qrAnimationFrame = requestAnimationFrame(loop);
+      return;
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+    ctx.drawImage(video, 0, 0, width, height);
+
+    let result = null;
+
+    // Prefer native BarcodeDetector where available.
+    if("BarcodeDetector" in window){
+      if(!window.__barcodeDetector){
+        try{
+          window.__barcodeDetector = new BarcodeDetector({formats:["qr_code"]});
+        }catch(e){}
+      }
+      if(window.__barcodeDetector){
+        window.__barcodeDetector.detect(canvas)
+          .then(codes => {
+            if(codes.length) handleRealQr(codes[0].rawValue);
+            else qrAnimationFrame = requestAnimationFrame(loop);
+          })
+          .catch(() => qrAnimationFrame = requestAnimationFrame(loop));
+        return;
+      }
+    }
+
+    // Fallback to jsQR.
+    if(typeof jsQR === "function"){
+      const image = ctx.getImageData(0, 0, width, height);
+      result = jsQR(image.data, image.width, image.height, {inversionAttempts:"attemptBoth"});
+    }
+
+    if(result && result.data){
+      handleRealQr(result.data);
+      return;
+    }
+
+    qrAnimationFrame = requestAnimationFrame(loop);
+  };
+
+  qrAnimationFrame = requestAnimationFrame(loop);
+}
+
+function handleRealQr(rawValue){
+  if(!rawValue) return;
+
+  // Prevent repeated reads of the same QR while it is still in front of the camera.
+  const now = Date.now();
+  if(rawValue === lastQrValue && now - lastQrTime < 5000) return;
+  lastQrValue = rawValue;
+  lastQrTime = now;
+
+  const product = parseQrData(rawValue);
+  saveScan(product, rawValue);
+  showScanResult(product);
+  setScanStatus("QR code detected ✓", false);
+
+  // Keep the camera active so another code can be scanned without reopening permissions.
+}
+
+function parseQrData(raw){
+  let data = null;
+
+  try{
+    data = JSON.parse(raw);
+  }catch(e){}
+
+  if(data && typeof data === "object"){
+    return {
+      name:data.name || data.product || "EcoNexus Product",
+      fabric:data.fabric || data.material || "Not specified",
+      shed:data.shed || data.shedding || "Not specified",
+      level:data.level ?? data.microfiberLevel ?? "Not specified",
+      impact:data.impact || data.environmentalImpact || "Not specified",
+      choice:data.choice || data.recommendation || "Check verified product information",
+      code:data.code || raw
+    };
+  }
+
+  const demo = {
+    "ECO-001":{
+      name:"Polyester Sports T-Shirt",fabric:"100% Polyester",shed:"High",
+      level:"72 / 100",impact:"Moderate–High",choice:"Look for lower-shedding options",code:"ECO-001"
+    },
+    "ECO-014":{
+      name:"Recycled Polyester Jacket",fabric:"Recycled Polyester",shed:"Medium",
+      level:"54 / 100",impact:"Moderate",choice:"Compare with lower-shedding fabrics",code:"ECO-014"
+    },
+    "ECO-021":{
+      name:"Cotton Denim",fabric:"Cotton-rich Denim",shed:"Low",
+      level:"21 / 100",impact:"Lower microfiber risk",choice:"Good lower-microfiber option",code:"ECO-021"
+    }
+  };
+
+  return demo[raw] || {
+    name:"Scanned QR Product",
+    fabric:"QR payload received",
+    shed:"Not specified",
+    level:"Not specified",
+    impact:"Not specified",
+    choice:"Add verified EcoNexus product data to this QR code",
+    code:raw
+  };
+}
+
+function showScanResult(d){
+  const result = document.getElementById("scanResult");
+  result.classList.add("show");
+  document.getElementById("productName").textContent = d.name;
+  document.getElementById("fabric").textContent = d.fabric;
+  document.getElementById("shed").textContent = d.shed;
+  document.getElementById("level").textContent = d.level;
+  document.getElementById("impact").textContent = d.impact;
+  document.getElementById("choice").textContent = d.choice;
+}
+
+function saveScan(product, raw){
+  const history = getHistory();
+
+  const record = {
+    ...product,
+    rawValue:raw,
+    scannedAt:new Date().toISOString()
+  };
+
+  // Keep newest scan first and avoid duplicate entries scanned within 10 seconds.
+  if(history.length && history[0].rawValue === raw &&
+     Date.now() - new Date(history[0].scannedAt).getTime() < 10000){
+    return;
+  }
+
+  history.unshift(record);
+  localStorage.setItem("ecoNexusHistory", JSON.stringify(history.slice(0,50)));
+  renderHistory();
+}
+
+function getHistory(){
+  try{
+    return JSON.parse(localStorage.getItem("ecoNexusHistory") || "[]");
+  }catch(e){
+    return [];
+  }
+}
+
+function renderHistory(){
+  const list = document.getElementById("historyList");
+  const empty = document.getElementById("historyEmpty");
+  if(!list || !empty) return;
+
+  const history = getHistory();
+  list.innerHTML = "";
+
+  if(!history.length){
+    empty.style.display = "block";
+    return;
+  }
+
+  empty.style.display = "none";
+
+  history.forEach((item, index) => {
+    const card = document.createElement("div");
+    card.className = "product";
+    card.innerHTML = `
+      <div class="product-icon">👕</div>
+      <div>
+        <h3>${escapeHtml(item.name)}</h3>
+        <p>${escapeHtml(item.fabric)} • ${escapeHtml(item.code || "QR")}</p>
+        <div class="history-time">${formatDate(item.scannedAt)}</div>
+      </div>
+      <div class="score">${escapeHtml(String(item.level))}</div>
+    `;
+    card.onclick = () => showScanResult(item);
+    list.appendChild(card);
+  });
+}
+
+function clearHistory(){
+  if(!getHistory().length) return;
+  if(confirm("Clear all saved scan history from this browser?")){
+    localStorage.removeItem("ecoNexusHistory");
+    renderHistory();
+  }
+}
+
+function formatDate(iso){
+  try{
+    return new Date(iso).toLocaleString([], {
+      dateStyle:"medium", timeStyle:"short"
+    });
+  }catch(e){ return iso; }
+}
+
+function escapeHtml(value){
+  return String(value).replace(/[&<>"']/g, ch => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
+  }[ch]));
+}
+
+
+
+
+/* ---------- QUIZ ---------- */
+const quizQuestions=[
+ {q:"What can synthetic textiles release during washing?",a:["Plastic microfibres","Only sand","Only salt","Nothing"],c:0},
+ {q:"Which choice can help reduce unnecessary shedding?",a:["Wash only when needed","Overload the machine","Ignore care labels","Wash every hour"],c:0},
+ {q:"What does the EcoNexus scanner use?",a:["A clothing QR code","A thermometer","A compass","A microphone"],c:0},
+ {q:"What should an app estimate be treated as?",a:["Educational information unless verified","A guaranteed laboratory result","A medical diagnosis","A legal certificate"],c:0},
+ {q:"What is the main goal of EcoNexus?",a:["Help people make informed clothing choices","Make people throw away all synthetic clothes","Sell clothing","Replace washing machines"],c:0}
+];
+let quizIndex=0, quizScore=0, quizSession=[];
+function shuffleArray(items){
+ const a=[...items];
+ for(let i=a.length-1;i>0;i--){
+   const j=Math.floor(Math.random()*(i+1));
+   [a[i],a[j]]=[a[j],a[i]];
+ }
+ return a;
+}
+function createRandomQuiz(){
+ return shuffleArray(quizQuestions).map(q=>{
+   const options=q.a.map((text,index)=>({text,index}));
+   const mixed=shuffleArray(options);
+   return {q:q.q,a:mixed.map(x=>x.text),c:mixed.findIndex(x=>x.index===q.c)};
+ });
+}
+function initQuiz(){
+ quizIndex=0;
+ quizScore=0;
+ quizSession=createRandomQuiz();
+ renderQuiz();
+}
+function renderQuiz(){
+ const area=document.getElementById('quizArea'); if(!area)return;
+ if(quizIndex>=quizSession.length){
+  const best=Math.max(quizScore,Number(localStorage.getItem('ecoNexusQuizBest')||0));
+  localStorage.setItem('ecoNexusQuizBest',best);
+  area.innerHTML=`<div class="quiz-result"><div>🎉</div><h3>Quiz Complete!</h3><div class="quiz-score">${quizScore}/${quizSession.length}</div><p>Your questions and answer choices were randomized for this round.</p><button class="primary" onclick="initQuiz()">New Random Quiz</button></div>`; return;
+ }
+ const x=quizSession[quizIndex];
+ area.innerHTML=`<div class="quiz-progress">Question ${quizIndex+1} of ${quizSession.length} • Randomized</div><div class="quiz-q">${escapeHtml(x.q)}</div>${x.a.map((o,i)=>`<button class="quiz-option" onclick="answerQuiz(${i})">${escapeHtml(o)}</button>`).join('')}`;
+}
+function answerQuiz(i){
+ const x=quizSession[quizIndex];
+ document.querySelectorAll('.quiz-option').forEach((b,n)=>{b.disabled=true;if(n===x.c)b.classList.add('correct');if(n===i&&i!==x.c)b.classList.add('wrong');});
+ if(i===x.c)quizScore++;
+ setTimeout(()=>{quizIndex++;renderQuiz()},650);
+}
+
+/* ---------- MINI GAME ---------- */
+let gameTimer=null, gameRunning=false, gameScore=0, gameItems=[];
+function resizeGameCanvas(){const c=document.getElementById('gameCanvas');if(c){c.width=Math.max(320,c.clientWidth*2);c.height=360*2;}}
+function startGame(){
+ const c=document.getElementById('gameCanvas'),ctx=c.getContext('2d');
+ resizeGameCanvas(); gameScore=0; gameRunning=true; gameItems=[]; let seconds=30;
+ document.getElementById('gameScore').textContent=0; document.getElementById('gameTime').textContent=seconds;
+ clearInterval(gameTimer); clearTimeout(window.gameEndTimer);
+ gameTimer=setInterval(()=>{seconds--;document.getElementById('gameTime').textContent=seconds;if(seconds<=0){clearInterval(gameTimer);gameRunning=false;showGameOver()}},1000);
+ function spawn(){if(!gameRunning)return;gameItems.push({x:Math.random()*c.width,y:-30,r:18,good:Math.random()>0.32,vy:2+Math.random()*3});setTimeout(spawn,Math.max(220,650-Math.min(gameScore,20)*12));}
+ spawn();
+ function loop(){
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.font='28px sans-serif';ctx.textAlign='center';
+  gameItems.forEach(o=>{o.y+=o.vy;ctx.fillText(o.good?'🧺':'🧵',o.x,o.y)});
+  gameItems=gameItems.filter(o=>o.y<c.height+40);
+  if(gameRunning) requestAnimationFrame(loop);
+ }
+ loop();
+ c.onpointerdown=(ev)=>{if(!gameRunning)return;const r=c.getBoundingClientRect();const x=(ev.clientX-r.left)*c.width/r.width,y=(ev.clientY-r.top)*c.height/r.height;let hit=-1;for(let i=gameItems.length-1;i>=0;i--){const o=gameItems[i];if(Math.hypot(o.x-x,o.y-y)<32){hit=i;break}}if(hit>=0){const o=gameItems.splice(hit,1)[0];gameScore+=o.good?10:-5;gameScore=Math.max(0,gameScore);document.getElementById('gameScore').textContent=gameScore;}}
+}
+function showGameOver(){const best=Math.max(gameScore,Number(localStorage.getItem('ecoNexusGameBest')||0));localStorage.setItem('ecoNexusGameBest',best);document.getElementById('gameBest').textContent=best;document.getElementById('gameTip').textContent=`Time up! Your score was ${gameScore}. Try again and beat your best score.`}
+function showGameTip(){document.getElementById('gameTip').textContent='Tap the 🧺 items to score points. Avoid 🧵 microfiber fibres. You have 30 seconds.'}
+
+/* ---------- GALLERY ---------- */
+async function renderGallery(){
+ const grid=document.getElementById('galleryGrid');if(!grid)return;
+ grid.innerHTML='<div class="info-box">Loading gallery…</div>';
+ try{
+   const r=await apiFetch('/api/gallery');
+   const data=await r.json();
+   const items=Array.isArray(data)?data:(data.gallery||[]);
+   grid.innerHTML='';
+   if(!items.length){grid.innerHTML='<div class="empty"><div>🖼️</div><h3>No photos yet</h3><p>The EcoNexus team will publish gallery photos here.</p></div>';return;}
+   items.forEach(x=>{const d=document.createElement('div');d.className='gallery-item';const src=(x.url||'').startsWith('http')?x.url:(API_BASE+x.url);d.innerHTML=`<img src="${escapeAttr(src)}" alt="${escapeHtml(x.title||'EcoNexus photo')}"><div class="gallery-caption">${escapeHtml(x.title||'EcoNexus Gallery')}</div>`;grid.appendChild(d);});
+ }catch(e){grid.innerHTML='<div class="empty"><div>📡</div><h3>Gallery unavailable</h3><p>Connect the app to the EcoNexus main server to load photographs.</p></div>';}
+}
+
+const API_BASE=(window.ECONEXUS_API_BASE||'').replace(/\/$/,'');
+function apiFetch(path,options={}){
+ const url=(API_BASE?API_BASE:'')+path;
+ options.headers=Object.assign({'Accept':'application/json'},options.headers||{});
+ const token=localStorage.getItem('ecoNexusToken');
+ if(token) options.headers.Authorization='Bearer '+token;
+ return fetch(url,options);
+}
+function escapeAttr(v){return String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+async function loadUpdates(){
+ const list=document.getElementById('updateList'), status=document.getElementById('updateStatus');
+ if(!list)return;
+ try{
+  const r=await apiFetch('/api/updates'); if(!r.ok) throw new Error();
+  const data=await r.json(); const items=Array.isArray(data)?data:(data.updates||[]);
+  list.innerHTML='';
+  items.forEach(x=>{const d=document.createElement('div');d.className='event-card';d.innerHTML=`<div class="event-top"><div class="event-date">${escapeHtml(x.date||'Update')}</div><span class="event-type">${escapeHtml(x.type||'UPDATE')}</span></div><h3>${escapeHtml(x.title||'EcoNexus Update')}</h3><p>${escapeHtml(x.description||'')}</p>`;list.appendChild(d);});
+  status.textContent=items.length?'✓ Live updates received from the main server.':'No updates published yet.';
+ }catch(e){status.textContent='Main server unavailable. Connect the app to the EcoNexus server to receive updates.';list.innerHTML='';}
+}
+
+function startNativeScanner(){
+ if(window.Android && typeof window.Android.scanQr==='function'){window.Android.scanQr();return;}
+ startCamera();
+}
+window.receiveNativeQr=function(raw){handleRealQr(raw);};
+
+async function loadEvents(){
+  const list = document.getElementById("eventList");
+  const empty = document.getElementById("eventEmpty");
+  const status = document.getElementById("eventStatus");
+  if(!list) return;
+
+  status.textContent = "Connecting to the EcoNexus main data center…";
+  list.innerHTML = "";
+
+  try{
+    const response = await apiFetch("/api/events");
+    if(!response.ok) throw new Error("Server returned " + response.status);
+
+    const payload = await response.json();
+    const events = Array.isArray(payload) ? payload : (payload.events || []);
+
+    renderEvents(events);
+    status.textContent = "✓ Live data received from the EcoNexus main data center.";
+    status.style.borderLeftColor = "#2f9d73";
+  }catch(error){
+    // Helpful fallback when the HTML is opened directly without server.js.
+    const fallback = [
+      {
+        id:"demo-1", title:"Wear Smart, Wash Smart",
+        date:"2026-08-28", time:"10:00",
+        location:"Little Angels High School",
+        type:"Awareness",
+        description:"Learn simple ways to reduce microfiber release during clothing care and make more informed fabric choices."
+      },
+      {
+        id:"demo-2", title:"Cleaner Clothing Challenge",
+        date:"2026-09-05", time:"11:00",
+        location:"Community Awareness Center",
+        type:"Community",
+        description:"A public awareness event encouraging people to discover lower-microfiber clothing alternatives."
+      }
+    ];
+    renderEvents(fallback);
+    status.textContent = "Demo events shown. Run the EcoNexus server to receive live events from the main data center.";
+  }
+}
+
+function renderEvents(events){
+  const list = document.getElementById("eventList");
+  const empty = document.getElementById("eventEmpty");
+  if(!list || !empty) return;
+
+  const now = new Date();
+  const upcoming = events
+    .filter(e => e.date && new Date(e.date + "T" + (e.time || "23:59")) >= now)
+    .sort((a,b) => new Date(a.date + "T" + (a.time || "00:00")) - new Date(b.date + "T" + (b.time || "00:00")));
+
+  list.innerHTML = "";
+  if(!upcoming.length){
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+
+  upcoming.forEach(e => {
+    const card = document.createElement("div");
+    card.className = "event-card";
+    card.innerHTML = `
+      <div class="event-top">
+        <div class="event-date">${escapeHtml(formatEventDate(e.date))} • ${escapeHtml(e.time || "")}</div>
+        <span class="event-type">${escapeHtml(e.type || "EVENT")}</span>
+      </div>
+      <h3>${escapeHtml(e.title || "EcoNexus Event")}</h3>
+      <p>${escapeHtml(e.description || "")}</p>
+      <div class="event-meta">
+        <div>📍 <strong>${escapeHtml(e.location || "Location to be announced")}</strong></div>
+        ${e.organizer ? `<div>👥 <strong>${escapeHtml(e.organizer)}</strong></div>` : ""}
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function formatEventDate(date){
+  try{
+    return new Date(date + "T00:00").toLocaleDateString([], {
+      day:"numeric", month:"short", year:"numeric"
+    });
+  }catch(e){ return date; }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  // Brand splash first, then reveal the normal app interface.
+  const splash = document.getElementById("splashScreen");
+  const login = document.getElementById("loginScreen");
+  const main = document.getElementById("mainApp");
+  login.style.opacity = "0";
+  login.style.transition = "opacity .55s ease";
+  main.style.opacity = "0";
+  main.style.transition = "opacity .55s ease";
+  login.style.display = "grid";
+  main.style.display = "none";
+  renderHistory();
+  loadEvents();
+  document.getElementById('gameBest').textContent=localStorage.getItem('ecoNexusGameBest')||0;
+
+  setTimeout(() => {
+    splash.classList.add("hide");
+    setTimeout(() => { login.style.opacity = "1"; }, 180);
+    setTimeout(() => splash.remove(), 700);
+  }, 1800);
+});
+
+
+let deferredInstallPrompt = null;
+function showToast(message){
+  const el=document.getElementById('toast'); if(!el)return;
+  el.textContent=message; el.classList.add('show');
+  clearTimeout(window.__toastTimer); window.__toastTimer=setTimeout(()=>el.classList.remove('show'),2600);
+}
+function dismissInstall(){document.getElementById('installBanner')?.classList.remove('show'); localStorage.setItem('ecoNexusInstallDismissed','1');}
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault(); deferredInstallPrompt=e;
+  if(localStorage.getItem('ecoNexusInstallDismissed')!=='1') document.getElementById('installBanner')?.classList.add('show');
+});
+document.getElementById('installBtn')?.addEventListener('click',async()=>{
+  if(!deferredInstallPrompt){showToast('Use your browser menu to install EcoNexus.');return;}
+  deferredInstallPrompt.prompt();
+  const choice=await deferredInstallPrompt.userChoice;
+  if(choice.outcome==='accepted') document.getElementById('installBanner')?.classList.remove('show');
+  deferredInstallPrompt=null;
+});
+window.addEventListener('appinstalled',()=>{showToast('EcoNexus installed successfully.');document.getElementById('installBanner')?.classList.remove('show');});
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
+
+function scanDemo(){
+  const code = (document.getElementById("qrInput").value || "ECO-001").trim().toUpperCase();
+  const product = parseQrData(code);
+  saveScan(product, code);
+  showScanResult(product);
+  setScanStatus("Test QR data loaded ✓", false);
+}
+</script>
+</body>
+</html>
