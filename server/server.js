@@ -8,6 +8,12 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 const DATA_FILE = path.join(__dirname, 'data.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const ADMIN_FILE = path.join(
+    __dirname,
+    'EcoNexus_Main_Data_Center_Users_Updated.html'
+);
+const ADMIN_FILENAME =
+    'EcoNexus_Main_Data_Center_Users_Updated.html';
 
 function loadData() {
     if (!fs.existsSync(DATA_FILE)) {
@@ -34,10 +40,29 @@ function loadData() {
     }
 
     try {
-        return JSON.parse(
+        const data = JSON.parse(
             fs.readFileSync(DATA_FILE, 'utf8')
         );
+
+        data.users ||= {};
+        data.sessions ||= {};
+        data.events ||= [];
+        data.gallery ||= [];
+        data.updates ||= [];
+        data.settings ||= {};
+
+        data.settings = {
+            appName: 'EcoNexus',
+            latestVersion: '1.0.0',
+            announcement: 'Welcome to EcoNexus',
+            maintenance: false,
+            ...data.settings
+        };
+
+        return data;
     } catch (e) {
+        console.error('Failed to load data.json:', e);
+
         return {
             users: {},
             sessions: {},
@@ -87,13 +112,9 @@ function send(res, status, payload, headers = {}) {
             {
                 'Content-Type':
                     'application/json; charset=utf-8',
-
-                'Access-Control-Allow-Origin':
-                    '*',
-
+                'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Headers':
                     'Content-Type, Authorization',
-
                 'Access-Control-Allow-Methods':
                     'GET,POST,PUT,DELETE,OPTIONS'
             },
@@ -112,21 +133,34 @@ function notFound(res) {
 
 function parseBody(req) {
     return new Promise((resolve, reject) => {
-        let s = '';
+        let body = '';
+        let rejected = false;
 
-        req.on('data', c => {
-            s += c;
+        req.on('data', chunk => {
+            if (rejected) {
+                return;
+            }
 
-            if (s.length > 10 * 1024 * 1024) {
+            body += chunk;
+
+            if (body.length > 10 * 1024 * 1024) {
+                rejected = true;
                 req.destroy();
+                reject(
+                    new Error('Request body too large.')
+                );
             }
         });
 
         req.on('end', () => {
+            if (rejected) {
+                return;
+            }
+
             try {
                 resolve(
-                    s
-                        ? JSON.parse(s)
+                    body
+                        ? JSON.parse(body)
                         : {}
                 );
             } catch (e) {
@@ -134,33 +168,29 @@ function parseBody(req) {
             }
         });
 
-        req.on('error', reject);
+        req.on('error', err => {
+            if (!rejected) {
+                reject(err);
+            }
+        });
     });
 }
 
-/*
- * NORMAL USER AUTHENTICATION
- *
- * This remains active for the main EcoNexus app.
- */
 function auth(req) {
-    const h =
+    const header =
         req.headers.authorization || '';
 
-    const t =
-        h.startsWith('Bearer ')
-            ? h.slice(7)
+    const accessToken =
+        header.startsWith('Bearer ')
+            ? header.slice(7)
             : '';
 
-    return t && db.sessions[t]
-        ? db.sessions[t]
+    return accessToken &&
+        db.sessions[accessToken]
+        ? db.sessions[accessToken]
         : null;
 }
 
-/*
- * Convert internal user data into safe
- * information for the admin dashboard.
- */
 function safeUser(u) {
     return {
         id: u.id,
@@ -169,127 +199,158 @@ function safeUser(u) {
         createdAt: u.createdAt,
         lastLogin: u.lastLogin || null,
         lastSeen: u.lastSeen || null,
-
         active:
             !!u.lastSeen &&
-            (
-                Date.now() -
-                new Date(u.lastSeen).getTime()
-            ) < 90000
+            Date.now() -
+                new Date(u.lastSeen).getTime() <
+                90000
     };
 }
 
-/*
- * STATIC FILE SERVER
- */
-function serveStatic(res, pathname) {
-
-    const file =
-        pathname === '/'
-            ? path.join(
-                PUBLIC_DIR,
-                'index.html'
-            )
-            : path.join(
-                PUBLIC_DIR,
-                pathname.replace(
-                    /^[/\\]+/,
-                    ''
-                )
-            );
-
-    const publicRoot =
-        path.resolve(PUBLIC_DIR);
-
-    const resolvedFile =
-        path.resolve(file);
-
-    if (
-        !resolvedFile.startsWith(
-            publicRoot
-        )
-    ) {
-        return notFound(res);
-    }
-
-    if (!fs.existsSync(resolvedFile)) {
-        return notFound(res);
-    }
-
+function contentType(file) {
     const ext =
-        path.extname(
-            resolvedFile
-        ).toLowerCase();
+        path.extname(file).toLowerCase();
 
     const types = {
         '.html':
             'text/html; charset=utf-8',
-
         '.js':
             'application/javascript; charset=utf-8',
-
         '.css':
             'text/css; charset=utf-8',
-
         '.json':
             'application/json; charset=utf-8',
-
         '.png':
             'image/png',
-
         '.jpg':
             'image/jpeg',
-
         '.jpeg':
             'image/jpeg',
-
         '.webp':
             'image/webp',
-
+        '.svg':
+            'image/svg+xml',
+        '.gif':
+            'image/gif',
+        '.ico':
+            'image/x-icon',
         '.webmanifest':
-            'application/manifest+json'
+            'application/manifest+json',
+        '.txt':
+            'text/plain; charset=utf-8'
     };
+
+    return (
+        types[ext] ||
+        'application/octet-stream'
+    );
+}
+
+function serveFile(res, file) {
+    if (!fs.existsSync(file)) {
+        return notFound(res);
+    }
+
+    let stats;
+
+    try {
+        stats = fs.statSync(file);
+    } catch (e) {
+        return notFound(res);
+    }
+
+    if (!stats.isFile()) {
+        return notFound(res);
+    }
 
     res.writeHead(
         200,
         {
             'Content-Type':
-                types[ext] ||
-                'application/octet-stream',
-
-            'Access-Control-Allow-Origin':
-                '*'
+                contentType(file),
+            'Access-Control-Allow-Origin': '*'
         }
     );
 
-    fs.createReadStream(
-        resolvedFile
-    ).pipe(res);
+    const stream =
+        fs.createReadStream(file);
+
+    stream.on('error', () => {
+        if (!res.headersSent) {
+            send(res, 500, {
+                error: 'Failed to read file.'
+            });
+        } else {
+            res.destroy();
+        }
+    });
+
+    stream.pipe(res);
 }
 
+function serveStatic(res, pathname) {
+    if (
+        pathname === '/admin' ||
+        pathname === '/admin/'
+    ) {
+        return serveFile(
+            res,
+            ADMIN_FILE
+        );
+    }
 
-/*
- * MAIN SERVER
- */
+    if (
+        pathname ===
+        `/${ADMIN_FILENAME}`
+    ) {
+        return serveFile(
+            res,
+            ADMIN_FILE
+        );
+    }
+
+    const cleanPath =
+        pathname.replace(
+            /^[/\\]+/,
+            ''
+        );
+
+    const publicRoot =
+        path.resolve(PUBLIC_DIR);
+
+    const resolvedFile =
+        path.resolve(
+            PUBLIC_DIR,
+            cleanPath
+        );
+
+    if (
+        resolvedFile !== publicRoot &&
+        !resolvedFile.startsWith(
+            publicRoot + path.sep
+        )
+    ) {
+        return notFound(res);
+    }
+
+    return serveFile(
+        res,
+        resolvedFile
+    );
+}
+
 const server = http.createServer(
     async (req, res) => {
-
-        /*
-         * CORS PREFLIGHT
-         */
         if (
-            req.method ===
-            'OPTIONS'
+            req.method === 'OPTIONS'
         ) {
             res.writeHead(
                 204,
                 {
                     'Access-Control-Allow-Origin':
                         '*',
-
                     'Access-Control-Allow-Headers':
                         'Content-Type, Authorization',
-
                     'Access-Control-Allow-Methods':
                         'GET,POST,PUT,DELETE,OPTIONS'
                 }
@@ -306,23 +367,13 @@ const server = http.createServer(
         const p = url.pathname;
 
         try {
-
-            /*
-             * NORMAL WEBSITE FILES
-             */
-            if (
-                !p.startsWith('/api/')
-            ) {
+            if (!p.startsWith('/api/')) {
                 return serveStatic(
                     res,
                     p
                 );
             }
 
-
-            /*
-             * HEALTH
-             */
             if (
                 p === '/api/health' &&
                 req.method === 'GET'
@@ -338,18 +389,10 @@ const server = http.createServer(
                 );
             }
 
-
-            /*
-             * USER REGISTRATION
-             *
-             * Users still MUST create
-             * an account.
-             */
             if (
                 p === '/api/auth/register' &&
                 req.method === 'POST'
             ) {
-
                 const b =
                     await parseBody(req);
 
@@ -394,8 +437,7 @@ const server = http.createServer(
 
                 const u = {
                     id: id(),
-                    email: email,
-
+                    email,
                     passwordHash:
                         crypto
                             .createHash(
@@ -407,19 +449,19 @@ const server = http.createServer(
                             .digest(
                                 'hex'
                             ),
-
                     createdAt: now(),
                     lastLogin: now(),
                     lastSeen: now()
                 };
 
-                db.users[email] =
-                    u;
+                db.users[email] = u;
 
-                const t =
+                const accessToken =
                     token();
 
-                db.sessions[t] = {
+                db.sessions[
+                    accessToken
+                ] = {
                     userId: u.id,
                     email: u.email,
                     createdAt: now(),
@@ -432,22 +474,16 @@ const server = http.createServer(
                     res,
                     200,
                     {
-                        token: t
+                        token:
+                            accessToken
                     }
                 );
             }
 
-
-            /*
-             * USER LOGIN
-             *
-             * Demo login is NOT present.
-             */
             if (
                 p === '/api/auth/login' &&
                 req.method === 'POST'
             ) {
-
                 const b =
                     await parseBody(req);
 
@@ -466,9 +502,7 @@ const server = http.createServer(
                 const u =
                     db.users[email];
 
-                if (
-                    !u ||
-                    u.passwordHash !==
+                const passwordHash =
                     crypto
                         .createHash(
                             'sha256'
@@ -478,7 +512,12 @@ const server = http.createServer(
                         )
                         .digest(
                             'hex'
-                        )
+                        );
+
+                if (
+                    !u ||
+                    u.passwordHash !==
+                        passwordHash
                 ) {
                     return send(
                         res,
@@ -493,10 +532,12 @@ const server = http.createServer(
                 u.lastLogin = now();
                 u.lastSeen = now();
 
-                const t =
+                const accessToken =
                     token();
 
-                db.sessions[t] = {
+                db.sessions[
+                    accessToken
+                ] = {
                     userId: u.id,
                     email: u.email,
                     createdAt: now(),
@@ -509,26 +550,21 @@ const server = http.createServer(
                     res,
                     200,
                     {
-                        token: t
+                        token:
+                            accessToken
                     }
                 );
             }
 
-
-            /*
-             * USER HEARTBEAT
-             *
-             * Used for Active Now.
-             */
             if (
-                p === '/api/auth/heartbeat' &&
+                p ===
+                    '/api/auth/heartbeat' &&
                 req.method === 'POST'
             ) {
-
-                const s =
+                const session =
                     auth(req);
 
-                if (!s) {
+                if (!session) {
                     return send(
                         res,
                         401,
@@ -539,16 +575,16 @@ const server = http.createServer(
                     );
                 }
 
-                s.lastSeen =
+                session.lastSeen =
                     now();
 
                 const u =
                     Object.values(
                         db.users
                     ).find(
-                        x =>
-                            x.id ===
-                            s.userId
+                        user =>
+                            user.id ===
+                            session.userId
                     );
 
                 if (u) {
@@ -567,29 +603,10 @@ const server = http.createServer(
                 );
             }
 
-
-            /*
-             * ==================================================
-             * ADMIN PANEL
-             * ==================================================
-             *
-             * ADMIN PASSWORD HAS BEEN REMOVED.
-             *
-             * The admin HTML can directly access these routes.
-             *
-             * IMPORTANT:
-             * These endpoints are currently NOT protected.
-             */
-
-
-            /*
-             * USERS & ACTIVITY
-             */
             if (
                 p === '/api/admin/users' &&
                 req.method === 'GET'
             ) {
-
                 const users =
                     Object.values(
                         db.users
@@ -600,29 +617,34 @@ const server = http.createServer(
                         .sort(
                             (a, b) =>
                                 new Date(
-                                    b.lastLogin || 0
+                                    b.lastLogin ||
+                                        0
                                 ) -
                                 new Date(
-                                    a.lastLogin || 0
+                                    a.lastLogin ||
+                                        0
                                 )
                         );
 
                 const today =
                     new Date()
                         .toISOString()
-                        .slice(0, 10);
+                        .slice(
+                            0,
+                            10
+                        );
 
                 const active =
                     users.filter(
-                        u =>
-                            u.active
+                        user =>
+                            user.active
                     ).length;
 
                 const loggedInToday =
                     users.filter(
-                        u =>
-                            u.lastLogin &&
-                            u.lastLogin.slice(
+                        user =>
+                            user.lastLogin &&
+                            user.lastLogin.slice(
                                 0,
                                 10
                             ) === today
@@ -630,9 +652,9 @@ const server = http.createServer(
 
                 const newAccounts =
                     users.filter(
-                        u =>
-                            u.createdAt &&
-                            u.createdAt.slice(
+                        user =>
+                            user.createdAt &&
+                            user.createdAt.slice(
                                 0,
                                 10
                             ) === today
@@ -643,69 +665,59 @@ const server = http.createServer(
                     200,
                     {
                         users,
-
                         stats: {
                             total:
                                 users.length,
-
                             active,
-
                             loggedInToday,
-
                             newAccounts
                         }
                     }
                 );
             }
 
-
-            /*
-             * FORCE USER LOGOUT
-             */
             if (
                 p ===
                     '/api/admin/users/logout' &&
                 req.method === 'POST'
             ) {
-
                 const b =
                     await parseBody(req);
 
-                const uid =
+                const userId =
                     String(
                         b.userId || ''
                     );
 
                 for (
                     const [
-                        t,
-                        s
+                        sessionToken,
+                        session
                     ] of Object.entries(
                         db.sessions
                     )
                 ) {
-
                     if (
-                        s.userId ===
-                        uid
+                        session.userId ===
+                        userId
                     ) {
                         delete db.sessions[
-                            t
+                            sessionToken
                         ];
                     }
                 }
 
-                const u =
+                const user =
                     Object.values(
                         db.users
                     ).find(
-                        x =>
-                            x.id ===
-                            uid
+                        item =>
+                            item.id ===
+                            userId
                     );
 
-                if (u) {
-                    u.lastSeen =
+                if (user) {
+                    user.lastSeen =
                         null;
                 }
 
@@ -720,15 +732,11 @@ const server = http.createServer(
                 );
             }
 
-
-            /*
-             * ADMIN EVENTS - GET
-             */
             if (
-                p === '/api/admin/events' &&
+                p ===
+                    '/api/admin/events' &&
                 req.method === 'GET'
             ) {
-
                 return send(
                     res,
                     200,
@@ -739,51 +747,43 @@ const server = http.createServer(
                 );
             }
 
-
-            /*
-             * ADMIN EVENTS - CREATE
-             */
             if (
-                p === '/api/admin/events' &&
+                p ===
+                    '/api/admin/events' &&
                 req.method === 'POST'
             ) {
-
                 const b =
                     await parseBody(req);
 
-                const e = {
+                const event = {
                     ...b,
                     id: id(),
                     createdAt: now()
                 };
 
-                db.events.push(e);
+                db.events.push(event);
 
                 save();
 
                 return send(
                     res,
                     200,
-                    e
+                    event
                 );
             }
 
-
-            /*
-             * ADMIN EVENTS - DELETE
-             */
             if (
-                p === '/api/admin/events' &&
+                p ===
+                    '/api/admin/events' &&
                 req.method === 'DELETE'
             ) {
-
                 const b =
                     await parseBody(req);
 
                 db.events =
                     db.events.filter(
-                        x =>
-                            x.id !==
+                        event =>
+                            event.id !==
                             b.id
                     );
 
@@ -798,15 +798,10 @@ const server = http.createServer(
                 );
             }
 
-
-            /*
-             * PUBLIC EVENTS
-             */
             if (
                 p === '/api/events' &&
                 req.method === 'GET'
             ) {
-
                 return send(
                     res,
                     200,
@@ -817,15 +812,11 @@ const server = http.createServer(
                 );
             }
 
-
-            /*
-             * ADMIN UPDATES - GET
-             */
             if (
-                p === '/api/admin/updates' &&
+                p ===
+                    '/api/admin/updates' &&
                 req.method === 'GET'
             ) {
-
                 return send(
                     res,
                     200,
@@ -836,23 +827,17 @@ const server = http.createServer(
                 );
             }
 
-
-            /*
-             * ADMIN UPDATES - CREATE
-             */
             if (
-                p === '/api/admin/updates' &&
+                p ===
+                    '/api/admin/updates' &&
                 req.method === 'POST'
             ) {
-
                 const b =
                     await parseBody(req);
 
-                const x = {
+                const update = {
                     ...b,
-
                     id: id(),
-
                     date:
                         new Date()
                             .toISOString()
@@ -860,12 +845,11 @@ const server = http.createServer(
                                 0,
                                 10
                             ),
-
                     createdAt: now()
                 };
 
                 db.updates.unshift(
-                    x
+                    update
                 );
 
                 save();
@@ -873,26 +857,22 @@ const server = http.createServer(
                 return send(
                     res,
                     200,
-                    x
+                    update
                 );
             }
 
-
-            /*
-             * ADMIN UPDATES - DELETE
-             */
             if (
-                p === '/api/admin/updates' &&
+                p ===
+                    '/api/admin/updates' &&
                 req.method === 'DELETE'
             ) {
-
                 const b =
                     await parseBody(req);
 
                 db.updates =
                     db.updates.filter(
-                        x =>
-                            x.id !==
+                        update =>
+                            update.id !==
                             b.id
                     );
 
@@ -907,15 +887,10 @@ const server = http.createServer(
                 );
             }
 
-
-            /*
-             * PUBLIC UPDATES
-             */
             if (
                 p === '/api/updates' &&
                 req.method === 'GET'
             ) {
-
                 return send(
                     res,
                     200,
@@ -926,15 +901,10 @@ const server = http.createServer(
                 );
             }
 
-
-            /*
-             * PUBLIC APP SETTINGS
-             */
             if (
                 p === '/api/settings' &&
                 req.method === 'GET'
             ) {
-
                 return send(
                     res,
                     200,
@@ -942,21 +912,11 @@ const server = http.createServer(
                 );
             }
 
-
-            /*
-             * ADMIN APP SETTINGS
-             *
-             * Dashboard can update:
-             * - app name
-             * - version
-             * - announcement
-             * - maintenance mode
-             */
             if (
-                p === '/api/admin/settings' &&
+                p ===
+                    '/api/admin/settings' &&
                 req.method === 'PUT'
             ) {
-
                 const b =
                     await parseBody(req);
 
@@ -974,15 +934,10 @@ const server = http.createServer(
                 );
             }
 
-
-            /*
-             * PUBLIC GALLERY
-             */
             if (
                 p === '/api/gallery' &&
                 req.method === 'GET'
             ) {
-
                 return send(
                     res,
                     200,
@@ -993,15 +948,11 @@ const server = http.createServer(
                 );
             }
 
-
-            /*
-             * ADMIN GALLERY - UPLOAD
-             */
             if (
-                p === '/api/admin/gallery' &&
+                p ===
+                    '/api/admin/gallery' &&
                 req.method === 'POST'
             ) {
-
                 const b =
                     await parseBody(req);
 
@@ -1016,20 +967,17 @@ const server = http.createServer(
                     );
                 }
 
-                const x = {
+                const galleryItem = {
                     id: id(),
-
                     title:
                         b.title ||
                         'EcoNexus Photo',
-
                     url: b.data,
-
                     createdAt: now()
                 };
 
                 db.gallery.unshift(
-                    x
+                    galleryItem
                 );
 
                 save();
@@ -1037,26 +985,22 @@ const server = http.createServer(
                 return send(
                     res,
                     200,
-                    x
+                    galleryItem
                 );
             }
 
-
-            /*
-             * ADMIN GALLERY - DELETE
-             */
             if (
-                p === '/api/admin/gallery' &&
+                p ===
+                    '/api/admin/gallery' &&
                 req.method === 'DELETE'
             ) {
-
                 const b =
                     await parseBody(req);
 
                 db.gallery =
                     db.gallery.filter(
-                        x =>
-                            x.id !==
+                        item =>
+                            item.id !==
                             b.id
                     );
 
@@ -1071,18 +1015,40 @@ const server = http.createServer(
                 );
             }
 
-
-            /*
-             * UNKNOWN API ROUTE
-             */
             return notFound(res);
-
         } catch (e) {
-
             console.error(
                 'Server error:',
                 e
             );
+
+            if (
+                e.message ===
+                'Request body too large.'
+            ) {
+                return send(
+                    res,
+                    413,
+                    {
+                        error:
+                            'Request body too large.'
+                    }
+                );
+            }
+
+            if (
+                e instanceof
+                SyntaxError
+            ) {
+                return send(
+                    res,
+                    400,
+                    {
+                        error:
+                            'Invalid JSON request body.'
+                    }
+                );
+            }
 
             return send(
                 res,
@@ -1096,15 +1062,32 @@ const server = http.createServer(
     }
 );
 
+console.log(
+    'RUNNING SERVER FILE:',
+    __filename
+);
 
-/*
- * START SERVER
- */
+console.log(
+    'ADMIN FILE:',
+    ADMIN_FILE
+);
+
+console.log(
+    'ADMIN EXISTS:',
+    fs.existsSync(
+        ADMIN_FILE
+    )
+);
+
+console.log(
+    'PUBLIC DIRECTORY:',
+    PUBLIC_DIR
+);
+
 server.listen(
     PORT,
     HOST,
     () => {
-
         console.log(
             `EcoNexus server running at http://${HOST}:${PORT}`
         );
