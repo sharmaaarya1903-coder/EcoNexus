@@ -5,8 +5,8 @@
       "email": "tiwariom3132@gmail.com",
       "passwordHash": "a057ef48fefb970f0c6bef0a21d02e3bf85945dd228d68a15861333fd45ba9ab",
       "createdAt": "2026-08-21T16:34:35.984Z",
-      "lastLogin": "2026-08-21T16:37:29.853Z",
-      "lastSeen": "2026-08-21T16:45:34.492Z"
+      "lastLogin": "2026-08-22T10:50:26.574Z",
+      "lastSeen": "2026-08-22T10:50:56.584Z"
     }
   },
   "sessions": {
@@ -21,19 +21,25 @@
       "email": "tiwariom3132@gmail.com",
       "createdAt": "2026-08-21T16:37:29.853Z",
       "lastSeen": "2026-08-21T16:37:29.871Z"
+    },
+    "aab56f0918cde58879753f65e1bfa71054f23ffa7f79ddd2fcf98fb722da6d59": {
+      "userId": "7f8466ab-92e7-4059-8c42-3e348ffdf155",
+      "email": "tiwariom3132@gmail.com",
+      "createdAt": "2026-08-22T10:50:26.574Z",
+      "lastSeen": "2026-08-22T10:50:56.584Z"
     }
   },
   "events": [
     {
-      "title": "23123",
-      "date": "2026-08-19",
-      "time": "22:12",
-      "location": "3123213",
+      "title": "12333",
+      "date": "2026-08-24",
+      "time": "08:23",
+      "location": "hysagdas",
       "type": "Awareness",
       "organizer": "EcoNexus",
-      "description": "32157563476587423423",
-      "id": "385192e2-8be5-4cbb-9e1c-dcffc346d132",
-      "createdAt": "2026-08-21T16:39:32.803Z"
+      "description": "dfpkdsa fodsafadsjkf sdauf hads fsda hfsad fsadh fus fs fiuads hfusd fus fsau hfsad h hdf suda hfsad",
+      "id": "efc53c6b-cc1d-4890-8ad4-72d1983453e7",
+      "createdAt": "2026-08-22T10:50:07.960Z"
     }
   ],
   "gallery": [
